@@ -1,2 +1,2 @@
 # Boussinesq
-Development of a FVM model of heat loss in a cylindrical cup using Boussinesq approximation.
+Development of a FVM model for heat loss in a cylindrical cup using Boussinesq approximation to account for natural convection.

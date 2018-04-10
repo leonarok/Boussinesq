@@ -1,3 +1,10 @@
 
 *.bak
 *.dat
+*.exe
+*.fif
+*.make
+*.mako
+*.o
+*.mod
+*.log

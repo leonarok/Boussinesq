@@ -10,11 +10,11 @@ module declarations
 	double precision,public, allocatable, dimension(:) :: x,x_u,y,y_v,er
 	double precision,public :: xl,yl
 	integer,public :: ipref,jpref
-	double precision,public,allocatable,dimension(:,:) :: u,v,pc,p,T,rho,mu,k
+	double precision,public,allocatable,dimension(:,:) :: u,v,pc,p,T
 	double precision,public,allocatable,dimension(:,:) :: u_tent,v_tent,T_tent
 	double precision,public, parameter :: pi=3.1415927
-	double precision,public :: radius,perim,h,Tpar
-	double precision,public, allocatable, dimension(:,:) :: f_u,f_v,cp
+	double precision,public :: radius,perim,h,Tpar,rho,mu,k,cp
+	double precision,public, allocatable, dimension(:,:) :: f_u,f_v
 	double precision,public, allocatable, dimension(:,:) :: d_u,d_v
 	double precision,public :: dx,dy
 	real ,public :: relax(6)
@@ -68,9 +68,9 @@ module sub
 	  	npj=102
 	  	last=400	
 		allocate(u(npi,npj),v(npi,npj),p(npi,npj),pc(npi,npj))
-		allocate(T(npi,npj),rho(npi,npj))
-		allocate(u_tent(npi,npj),v_tent(npi,npj),T_tent(npi,npj),k(npi,npj))
-		allocate(d_u(npi,npj),d_v(npi,npj),mu(npi,npj),cp(npi,npj),er(last))
+		allocate(T(npi,npj))
+		allocate(u_tent(npi,npj),v_tent(npi,npj),T_tent(npi,npj))
+		allocate(d_u(npi,npj),d_v(npi,npj),er(last))
 	  
 		!--------------------------------------!
 		! Set timestep and simulation end time !
@@ -104,10 +104,10 @@ module sub
 		!---------------------!
 	 	g_const=9.81			! Standard gravity
 	 	alpha=0.000069			! Thermal expansion coeff.
-	 	rho(1:npi,1:npj)=1000	! Density
-	 	mu(1:npi,1:npj)=0.001   ! Dynamic viscosity
-	 	k(1:npi,1:npj)=0.64  	! Thermal conductivety 
-	 	cp(1:npi,1:npj)=4181   	! Specific heat
+	 	rho=1000	! Density
+	 	mu=0.001   ! Dynamic viscosity
+	 	k=0.64  	! Thermal conductivety 
+	 	cp=4181   	! Specific heat
 	  
 	  
 	  	!-----------------------------------!
@@ -601,12 +601,10 @@ module sub
 	      		!----------------------------!
 				! Find diffusion conductance !
 				!----------------------------!
-	        	dw=(mu(i-1,j)/(x_u(i)-x_u(i-1)))*areaw
-	        	de=(mu(i,j)/(x_u(i+1)-x_u(i)))*areae
-	        	ds=((mu(i-1,j)+mu(i,j)+mu(i-1,j-1)+mu(i,j-1))/ &
-	        		(4*(y(j)-y(j-1))))*areas
-	        	dn=((mu(i-1,j+1)+mu(i,j+1)+mu(i-1,j)+mu(i,j))/ &
-	        		(4*(y(j+1)-y(j))))*arean
+	        	dw=(mu/(x_u(i)-x_u(i-1)))*areaw
+	        	de=(mu/(x_u(i+1)-x_u(i)))*areae
+	        	ds=(mu/(y(j)-y(j-1)))*areas
+	        	dn=(mu/(y(j+1)-y(j)))*arean
 	
 	      		!-------------------!
 				! Find source terms !
@@ -625,7 +623,7 @@ module sub
 	      		!------------------------------!
 				! Establish center coefficient !
 				!------------------------------!
-	        	ap_zero= 0.5*(rho(i,j)+rho(i-1,j))*areas*areaw/dt
+	        	ap_zero= rho*areas*areaw/dt
 	        	ap_tilde=aw(i,j)+ae(i,j)+as(i,j)+an(i,j)+fe-fw+fn-fs-sp
 	        	ap(i,j)=ap_zero+ap_tilde
 	
@@ -697,12 +695,10 @@ module sub
 	     		!----------------------------!
 				! Find diffusion conductance !
 				!----------------------------!
-	        	dw=((mu(i-1,j-1)+mu(i,j-1)+mu(i-1,j)+mu(i,j))/ &
-	        		(4*(x(i)-x(i-1))))*areaw
-	        	de=((mu(i,j-1)+mu(i+1,j-1)+mu(i,j)+mu(i+1,j))/ &
-	        		(4*(x(i+1)-x(i))))*areae
-	        	ds=(mu(i,j-1)/(y_v(j)-y_v(j-1)))*areas
-	        	dn=(mu(i,j)/(y_v(j+1)-y_v(j)))*arean
+	        	dw=(mu/(x(i)-x(i-1)))*areaw
+	        	de=(mu/(x(i+1)-x(i)))*areae
+	        	ds=(mu/(y_v(j)-y_v(j-1)))*areas
+	        	dn=(mu/(y_v(j+1)-y_v(j)))*arean
 	
 	      		!-------------------!
 				! Find source terms !
@@ -722,7 +718,7 @@ module sub
 	      		!------------------------------!
 				! Establish center coefficient !
 				!------------------------------!
-	        	ap_zero= 0.5*(rho(i,j)+rho(i,j-1))*areas*areaw/dt
+	        	ap_zero= rho*areas*areaw/dt
 	        	ap_tilde=aw(i,j)+ae(i,j)+as(i,j)+an(i,j)+fe-fw+fn-fs-sp
 	        	ap(i,j)=ap_zero+ap_tilde
 	
@@ -786,26 +782,26 @@ module sub
 				!---------------------------!
 				! Find convective mass flux !
 				!---------------------------!
-	      		fw=f_u(i,j)*cp(i,j)*areaw
-	      		fe=f_u(i+1,j)*cp(i,j)*areae
-	      		fs=f_v(i,j)*cp(i,j)*areas
-	      		fn=f_v(i,j+1)*cp(i,j)*arean
+	      		fw=f_u(i,j)*cp*areaw
+	      		fe=f_u(i+1,j)*cp*areae
+	      		fs=f_v(i,j)*cp*areas
+	      		fn=f_v(i,j+1)*cp*arean
 
 				!---------------------------------------------!
 				! Find diffusion conductance by harmonic mean !
 				!---------------------------------------------!
-				dw=((k(i-1,j)*k(i,j))/(k(i-1,j)*    &
-	            	(x(i)-x_u(i))+k(i,j)*(x_u(i)-x(i-1))))*areaw
-	        	de=((k(i,j)*k(i+1,j))/(k(i,j)*       &
-	            	(x(i+1)-x_u(i+1))+k(i+1,j)*(x_u(i+1)-x(i))))*areae
-	        	ds=((k(i,j-1)*k(i,j))/(k(i,j-1)*      &
-	            	(y(j)-y_v(j))+k(i,j)*(y_v(j)-y(j-1))))*areas
-	        	dn=((k(i,j)*k(i,j+1))/(k(i,j)*         &
-	            	(y(j+1)-y_v(j+1))+k(i,j+1)*(y_v(j+1)-y(j))))*arean
-	!			dw=0.5*( k(i,j)+k(i-1,j) )/(x(i)-x(i-1))		
-	!			de=0.5*( k(i+1,j)+k(i,j) )/(x(i+1)-x(i))
-	!			ds=0.5*( k(i,j)+k(i,j-1) )/(y(j)-y(j-1))
-	!			dn=0.5*( k(i,j+1)+k(i,j) )/(y(j+1)-y(j))
+!				dw=((k(i-1,j)*k(i,j))/(k(i-1,j)*    &
+!	            	(x(i)-x_u(i))+k(i,j)*(x_u(i)-x(i-1))))*areaw
+!	        	de=((k(i,j)*k(i+1,j))/(k(i,j)*       &
+!	            	(x(i+1)-x_u(i+1))+k(i+1,j)*(x_u(i+1)-x(i))))*areae
+!	        	ds=((k(i,j-1)*k(i,j))/(k(i,j-1)*      &
+!	            	(y(j)-y_v(j))+k(i,j)*(y_v(j)-y(j-1))))*areas
+!	        	dn=((k(i,j)*k(i,j+1))/(k(i,j)*         &
+!	            	(y(j+1)-y_v(j+1))+k(i,j+1)*(y_v(j+1)-y(j))))*arean
+				dw=k/(x(i)-x(i-1))*areaw		
+				de=k/(x(i+1)-x(i))*areae
+				ds=k/(y(j)-y(j-1))*areas
+				dn=k/(y(j+1)-y(j))*arean
 	
 				!-------------------!
 				! Find source terms !
@@ -836,7 +832,7 @@ module sub
 	            !------------------------------!
 				! Establish center coefficient !
 				!------------------------------!
-	        	ap_zero= rho(i,j)*cp(i,j)*areas*areaw/dt
+	        	ap_zero= rho*cp*areas*areaw/dt
 	        	ap_tilde=aw(i,j)+ae(i,j)+as(i,j)+an(i,j)+fe-fw+fn-fs-sp
 	        	ap(i,j)=ap_zero+ap_tilde
 	      	
@@ -869,10 +865,10 @@ module sub
 		!---------------------------------------------!
 	  	do i=2,npi
 	    	do j=2,npj
-	      		f_u(i,j)= (rho(i-1,j)*(x(i)-x_u(i))+           &
-	            	rho(i,j)* (x_u(i)-x(i-1)) )*u_tent(i,j)/(x(i)-x(i-1))
-	      		f_v(i,j)= (rho(i,j-1)*(y(j)-y_v(j))+           &
-	            	rho(i,j)*(y_v(j)-y(j-1)))*v_tent(i,j)/(y(j)-y(j-1))
+	      		f_u(i,j)= (rho*(x(i)-x_u(i))+           &
+	            	rho*(x_u(i)-x(i-1)) )*u_tent(i,j)/(x(i)-x(i-1))
+	      		f_v(i,j)= (rho*(y(j)-y_v(j))+           &
+	            	rho*(y_v(j)-y(j-1)))*v_tent(i,j)/(y(j)-y(j-1))
 	    	end do
 	 	end do   
 	     
@@ -924,10 +920,10 @@ module sub
 				!----------------------------------!
 				! Establish neighbour coefficients !
 				!----------------------------------!              
-	      		ae(i,j)=rho(i,j)*d_u(i+1,j)*areae
-	      		aw(i,j)=rho(i,j)*d_u(i,j)*areaw
-	      		an(i,j)=rho(i,j)*d_v(i,j+1)*arean
-	      		as(i,j)=rho(i,j)*d_v(i,j)*areas
+	      		ae(i,j)=rho*d_u(i+1,j)*areae
+	      		aw(i,j)=rho*d_u(i,j)*areaw
+	      		an(i,j)=rho*d_v(i,j+1)*arean
+	      		as(i,j)=rho*d_v(i,j)*areas
 				
 				!------------------------------!
 				! Establish center coefficient !

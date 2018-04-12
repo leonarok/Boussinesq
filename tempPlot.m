@@ -5,7 +5,7 @@ clc
 npi=42;
 npj=82;
 
-tend=3600;
+tend=600;
 dt=0.5;
 
 printTimes=10;
@@ -25,6 +25,7 @@ y=dlmread('output/y.dat');
 time=print_dt:print_dt:printSteps*print_dt;
 figure(1)
 
+
 for n=1:printSteps
     
     fileTime=num2str(n*print_dt);
@@ -39,7 +40,7 @@ for n=1:printSteps
         count(1:4)=fileTime;
     end
     fileloc(19:22)=count;
-    T=dlmread(fileloc);
+    T=dlmread(fileloc)-273.16;
     
     tempMid(n)=T(npi/2,npj/2);
     tempMidTop(n)=T(npi/2,ceil(npj*3/4));
@@ -49,10 +50,11 @@ for n=1:printSteps
     
     drawnow
     surf(x(2:npi-1),y(2:npj-1),T(2:npi-1,2:npj-1)')
-    axis([x(2) x(npi-1) y(2) y(npj-1) 293.16 356.16])
-    caxis([293 356]);
+    axis([x(2) x(npi-1) y(2) y(npj-1) 20 83])
+    caxis([20 83]);
     colorbar
-    F(n)=getframe(gcf);
+    shading interp
+    %F(n)=getframe(gcf);
 end
 
 figure(2)
@@ -61,4 +63,18 @@ plot(time,tempMean,'.-')
 plot(time,tempMid,'o-')
 plot(time,tempMidTop,'x-')
 plot(time,tempTopRight)
-legend('mean temp','temp at midnode','mid top temp','top right temp')
+hold off
+legend('Mean','Middle','Near top','Near top right')
+
+figure('rend','painters','pos',[100 100 900 600])
+
+surf(x(2:npi-1),y(2:npj-1),T(2:npi-1,2:npj-1)')
+title(sprintf('Temperature profile at t=%g s, computed with %g grid points',tend,npi*npj))
+axis([x(2) x(npi-1) y(2) y(npj-1) 20 83])
+xlabel('Width [m]')
+ylabel('Height [m]')
+zlabel('Temperature [K]')
+caxis([20 83]);
+c=colorbar;
+c.Label.String = 'Temperature [K]';
+shading interp

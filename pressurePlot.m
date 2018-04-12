@@ -50,6 +50,9 @@ for n=1:printSteps
     drawnow
     surf(x(2:npi-1),y(2:npj-1),p(2:npi-1,2:npj-1)')
     axis([x(2) x(npi-1) y(2) y(npj-1) 0 0.005])
+    
     colorbar
+    caxis([0 0.005]);
+    
     F(n)=getframe(gcf);
 end

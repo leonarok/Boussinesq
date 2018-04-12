@@ -64,9 +64,9 @@ module sub
 		!-----------------------------------------------------------------!
 		! Set number of grid points in each direction and allocate arrays !
 		!-----------------------------------------------------------------!
-		npi=52
-	  	npj=102
-	  	last=400	
+		npi=42
+	  	npj=82
+	  	last=200	
 		allocate(u(npi,npj),v(npi,npj),p(npi,npj),pc(npi,npj))
 		allocate(T(npi,npj))
 		allocate(u_tent(npi,npj),v_tent(npi,npj),T_tent(npi,npj))
@@ -75,8 +75,8 @@ module sub
 		!--------------------------------------!
 		! Set timestep and simulation end time !
 		!--------------------------------------!
-		tend=600
-		dt=0.15
+		tend=3600
+		dt=0.5
 		nsteps=ceiling(tend/dt)
 
 		!---------------------------------!
@@ -336,16 +336,16 @@ module sub
 		!-------------------!
 		! Open output files !
 		!-------------------!
-		write(filename,'("output/u/u_",f6.2,".dat")') time
+		write(filename,'("output/u/u_",f8.2,".dat")') time
 	    open(100,file=filename,status="unknown",RECL=(17*npj+120))
 	    
-	    write(filename,'("output/v/v_",f6.2,".dat")') time
+	    write(filename,'("output/v/v_",f8.2,".dat")') time
 	    open(101,file=filename,status='unknown',RECL=(17*npi+120))
 	    
-	    write(filename,'("output/temp/temp_",f6.2,".dat")') time
+	    write(filename,'("output/temp/temp_",f8.2,".dat")') time
 	   	open(12,file=filename,status='unknown',RECL=(17*npj+120))
 	   	
-	   	write(filename,'("output/p/p_",f6.2,".dat")') time
+	   	write(filename,'("output/p/p_",f8.2,".dat")') time
 	    open(13,file=filename,status='unknown',RECL=(17*npj+120))
 
 	    !----------------------------------------!
@@ -981,8 +981,8 @@ end module sub
 	implicit none
 	double precision,allocatable,dimension(:,:) :: ae,aw,an,as,ap,b
 	integer :: steps,it,jt,n
-	integer :: txtclock, binclock
-  	real    :: txttime, bintime
+	integer :: txtclock, coeffclock, solveclock
+  	real    :: txttime, coefftime, solvetime
   	
   	!-------------------------------------------!
 	! Initialize all parameters and create grid !
@@ -1029,10 +1029,16 @@ end module sub
 	      	!--------------------------------------!
 			! Solve u-equation for tentative value !
 			!--------------------------------------!
+			call tick(coeffclock)
 	      	call ucoeff(ae,aw,an,as,ap,b)
+	      	coefftime=tock(coeffclock)
+	      	!print *, 'coeff:', coefftime
+	      	call tick(solveclock)
 	    	do steps=1,1
 				call solve(u_tent,b,ae,aw,an,as,ap,2,npi,1,npj)
 			end do
+			solvetime=tock(solveclock)
+			!print *, 'solve:', solvetime
 			
 			!--------------------------------------!
 			! Solve v-equation for tentative value !
@@ -1064,7 +1070,9 @@ end module sub
 			! Solve temp-equation !
 			!---------------------!
 			call tcoeff(ae,aw,an,as,ap,b)  
-			call solve(T_tent,b,ae,aw,an,as,ap,1,npi,1,npj)
+			do steps=1,1
+				call solve(T_tent,b,ae,aw,an,as,ap,1,npi,1,npj)
+			end do
 			
 			!-------------------------!
 			! Specify boundary values !

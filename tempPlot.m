@@ -15,7 +15,7 @@ printSteps=ceil(tend/print_dt);
 fileloc = 'output/temp/temp_     .00.dat';
 count = '    ';
 
-tempMid=zeros(1,printSteps);tempTopRight=tempMid;
+tempMid=83*ones(1,printSteps);tempTopRight=tempMid;
 tempMean=tempMid;tempMidTop=tempMid;
 tempBotRight=tempMid;
 
@@ -23,7 +23,7 @@ x=dlmread('output/x.dat');
 y=dlmread('output/y.dat');
 
 
-time=print_dt:print_dt:printSteps*print_dt;
+time=0:print_dt:printSteps*print_dt;
 % figure(1)
 
 
@@ -43,11 +43,11 @@ for n=1:printSteps
     fileloc(19:22)=count;
     T=dlmread(fileloc)-273.16;
     
-    tempMid(n)=T(npi/2,npj/2);
-    tempMidTop(n)=T(npi/2,ceil(npj*5/6));
-    tempMean(n)=mean(mean(T(2:npi-1,2:npj-1)));
-    tempTopRight(n)=T(ceil(npi*5/6),ceil(npj*5/6));
-    tempBotRight(n)=T(ceil(npi*1/6),ceil(npj*1/6));
+    tempMid(n+1)=T(npi/2,npj/2);
+    tempMidTop(n+1)=T(npi/2,ceil(npj*5/6));
+    tempMean(n+1)=mean(mean(T(2:npi-1,2:npj-1)));
+    tempTopRight(n+1)=T(ceil(npi*5/6),ceil(npj*5/6));
+    tempBotRight(n+1)=T(ceil(npi*1/6),ceil(npj*1/6));
     
 %     drawnow
 %     surf(x(2:npi-1),y(2:npj-1),T(2:npi-1,2:npj-1)')

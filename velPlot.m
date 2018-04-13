@@ -24,7 +24,7 @@ y=dlmread('output/y.dat');
 
 
 time=print_dt:print_dt:printSteps*print_dt;
-figure(1)
+% figure(1)
 
 for n=1:printSteps
     
@@ -43,6 +43,7 @@ for n=1:printSteps
     fileloc2(13:16)=count;
     u=dlmread(fileloc1);
     v=dlmread(fileloc2)';
+    velTot=sqrt(u.^2+v.^2);
     
 %     tempMid(n)=T(npi/2,npj/2);
 %     tempMidTop(n)=T(npi/2,ceil(npj*3/4));
@@ -51,8 +52,27 @@ for n=1:printSteps
     
     
     drawnow
-    quiver(x(2:npi-1),y(2:npj-1),u(2:npi-1,2:npj-1)',v(2:npi-1,2:npj-1)')
+%     quiver(x(2:npi-1),y(2:npj-1),u(2:npi-1,2:npj-1)',v(2:npi-1,2:npj-1)')
+
+    %streamslice(x,y,u',v')
     %axis([x(2) x(npi-1) y(2) y(npj-1) 0 0.005])
     %colorbar
-    F(n)=getframe(gcf);
+    %F(n)=getframe(gcf);
 end
+
+figure('rend','painters','pos',[100 100 900 600])
+hold on
+pcolor(x,y,velTot')
+colormap(summer)
+shading interp
+h=streamslice(x,y,u',v',1.5)
+set(h,'Color','b');
+set(h,'LineWidth',1.5)
+title(sprintf('t=%g s, n=%g',tend,npi*npj))
+axis([x(2) x(npi-1) y(2) y(npj-1)])
+xlabel('Width [m]')
+ylabel('Height [m]')
+zlabel('Pressure [Pa]')
+caxis([0 0.00006]);
+c=colorbar;
+c.Label.String = 'Pressure [Pa]';

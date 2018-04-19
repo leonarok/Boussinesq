@@ -5,8 +5,8 @@ clc
 npi=42;
 npj=82;
 
-tend=3600;
-dt=0.5;
+tend=3080;
+dt=2;
 
 printTimes=10;
 print_dt=printTimes*dt;
@@ -24,7 +24,8 @@ y=dlmread('output/y.dat');
 
 
 time=0:print_dt:printSteps*print_dt;
-% figure(1)
+
+figure('rend','painters','pos',[100 100 900 600])
 
 
 for n=1:printSteps
@@ -49,11 +50,11 @@ for n=1:printSteps
     tempTopRight(n+1)=T(ceil(npi*5/6),ceil(npj*5/6));
     tempBotRight(n+1)=T(ceil(npi*1/6),ceil(npj*1/6));
     
-%     drawnow
-%     surf(x(2:npi-1),y(2:npj-1),T(2:npi-1,2:npj-1)')
-%     axis([x(2) x(npi-1) y(2) y(npj-1) 20 83])
-%     caxis([20 83]);
-%     colorbar
+    drawnow
+    surf(x(2:npi-1),y(2:npj-1),T(2:npi-1,2:npj-1)')
+    axis([x(2) x(npi-1) y(2) y(npj-1) 20 83])
+    caxis([20 83]);
+    colorbar
 %     shading interp
 
 end

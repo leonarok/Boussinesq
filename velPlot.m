@@ -62,17 +62,19 @@ end
 
 figure('rend','painters','pos',[100 100 900 600])
 hold on
-pcolor(x,y,velTot')
-colormap(summer)
+% pcolor(x,y,velTot')
+% colormap(summer)
 shading interp
-h=streamslice(x,y,u',v',1.5)
+h=quiver(x,y,u',v',1.2,'filled');
 set(h,'Color','b');
-set(h,'LineWidth',1.5)
+set(h,'LineWidth',0.5)
+set(h,'MaxHeadSize',2)
+set(h,'AutoScaleFactor',2)
 title(sprintf('t=%g s, n=%g',tend,npi*npj))
 axis([x(2) x(npi-1) y(2) y(npj-1)])
 xlabel('Width [m]')
 ylabel('Height [m]')
-zlabel('Pressure [Pa]')
-caxis([0 0.00006]);
-c=colorbar;
-c.Label.String = 'Pressure [Pa]';
+% zlabel('Pressure [Pa]')
+% caxis([0 0.00006]);
+% c=colorbar;
+% c.Label.String = 'Pressure [Pa]';

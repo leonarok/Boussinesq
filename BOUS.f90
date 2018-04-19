@@ -76,7 +76,7 @@ module sub
 		! Set timestep and simulation end time !
 		!--------------------------------------!
 		tend=3600
-		dt=0.5
+		dt=2
 		nsteps=ceiling(tend/dt)
 
 		!---------------------------------!
@@ -114,7 +114,7 @@ module sub
 		! Set cup/wall heat loss parameters !
 		!-----------------------------------!
 	    cup_width=0.01
-	    k_cup=77.1
+	    k_cup=2.09
 	  
 	  	!---------------------------!
 		! Set relaxation parameters !
@@ -1079,6 +1079,7 @@ end module sub
 			!-------------------------!
 			call bound()			
 			
+!			write(*,*) '(er(iter))/(er(1): ',(er(iter))/er(1)
 			!-----------------------!
 			! Check for convergence !
 			!-----------------------!

@@ -77,7 +77,7 @@ module sub
 		! Set timestep and simulation end time !
 		!--------------------------------------!
 		tend=3600
-		dt=1
+		dt=10
 		nsteps=ceiling(tend/dt)
 
 		!---------------------------------!
@@ -578,6 +578,7 @@ module sub
 	  	integer :: i,j
 	  	real :: fw,fe,fs,fn,dw,de,ds,dn,areaw,areae,areas,arean
 	  	real :: sp,su,ap_zero,ap_tilde
+	  	real :: r_w,r_e,dx_cell,dy_cell,volume
 		
 		!-----------------------------!
 		! Calculates convective terms !
@@ -593,10 +594,21 @@ module sub
 				!-------------------------!
 				! Find area of cell faces !
 				!-------------------------!
-	      		areaw=y_v(j+1)-y_v(j) 
-	      		areae=areaw
-	      		areas=x(i)-x(i-1)
+!	      		areaw=y_v(j+1)-y_v(j) 
+!	      		areae=areaw
+!	      		areas=x(i)-x(i-1)
+!	      		arean=areas
+				dx_cell=y_v(j+1)-y_v(j)
+				dy_cell=x(i)-x(i-1)
+				r_w=abs(xl/2-x(i-1))
+				r_e=abs(xl/2-x(i))
+				
+				areaw=pi*r_w*dy_cell
+	      		areae=pi*r_e*dy_cell
+	      		areas=pi/2*abs(r_w**2-r_e**2)
 	      		arean=areas
+	      		volume=areas*dy
+			
 
 				!---------------------------!
 				! Find convective mass flux !
@@ -631,19 +643,19 @@ module sub
 	      		!------------------------------!
 				! Establish center coefficient !
 				!------------------------------!
-	        	ap_zero= rho*areas*areaw/dt
+	        	ap_zero= rho*volume/dt
 	        	ap_tilde=aw(i,j)+ae(i,j)+as(i,j)+an(i,j)+fe-fw+fn-fs-sp
 	        	ap(i,j)=ap_zero+ap_tilde
 	
 	      		!-----------------------------------------------!
 				! Calculates coefficient term for use in pc eq. !
 				!-----------------------------------------------!
-	        	d_u(i,j)=areaw*relax(1)/ap(i,j)
+	        	d_u(i,j)=(areaw+areae)/2*relax(1)/ap(i,j)
 	
 				!-----------------------------!
 				! Establish total source term !
 				!-----------------------------!
-	        	b(i,j)=(p(i-1,j)-p(i,j))*areaw+ap_zero*u(i,j)+su
+	        	b(i,j)=(p(i-1,j)-p(i,j))*(areaw+areae)/2+ap_zero*u(i,j)+su
 	
 	      		!--------------------------------------------------------------!
 				! Introducing relaxation and adjusting source term accordingly !
@@ -672,6 +684,7 @@ module sub
 	    integer :: i,j
 	    real :: fw,fe,fs,fn,dw,de,ds,dn,areaw,areae,areas,arean,sp,su
 	    real :: ap_tilde,ap_zero
+	    real :: r_w,r_e,dx_cell,dy_cell,volume
 	    
 	    !-----------------------------!
 		! Calculates convective terms !
@@ -687,10 +700,20 @@ module sub
 	      		!-------------------------!
 				! Find area of cell faces !
 				!-------------------------!
-	        	areaw=y(j)-y(j-1)
-	        	areae=areaw
-	        	areas=x_u(i+1)-x_u(i)
-	        	arean=areas
+!	        	areaw=y(j)-y(j-1)
+!	        	areae=areaw
+!	        	areas=x_u(i+1)-x_u(i)
+!	        	arean=areas
+				dx_cell=y(j)-y(j-1)
+				dy_cell=x_u(i+1)-x_u(i)
+				r_w=abs(xl/2-x_u(i))
+				r_e=abs(xl/2-x_u(i+1))
+				
+				areaw=pi*r_w*dy_cell
+	      		areae=pi*r_e*dy_cell
+	      		areas=pi/2*abs(r_w**2-r_e**2)
+	      		arean=areas
+	      		volume=areas*dy
 	
 	      		!---------------------------!
 				! Find convective mass flux !
@@ -712,7 +735,7 @@ module sub
 				! Find source terms !
 				!-------------------!
 	        	sp=0.
-	        	su=g_const*alpha_l*(T_tent(i,j)-T_amb)*areas*areaw
+	        	su=g_const*alpha_l*(T_tent(i,j)-T_amb)*volume
 	
 	      		!----------------------------------!
 				! Establish neighbour coefficients !
@@ -726,7 +749,7 @@ module sub
 	      		!------------------------------!
 				! Establish center coefficient !
 				!------------------------------!
-	        	ap_zero= rho*areas*areaw/dt
+	        	ap_zero= rho*volume/dt
 	        	ap_tilde=aw(i,j)+ae(i,j)+as(i,j)+an(i,j)+fe-fw+fn-fs-sp
 	        	ap(i,j)=ap_zero+ap_tilde
 	
@@ -738,7 +761,7 @@ module sub
 	      		!-----------------------------!
 				! Establish total source term !
 				!-----------------------------!
-	        	b(i,j)=(p(i,j-1)-p(i,j))*areaw+ap_zero*v(i,j)+su
+	        	b(i,j)=(p(i,j-1)-p(i,j))*areas+ap_zero*v(i,j)+su
 	
 	      		!--------------------------------------------------------------!
 				! Introducing relaxation and adjusting source term accordingly !
@@ -767,7 +790,8 @@ module sub
 	  	integer :: i,j
 	  	real :: fw,fe,fs,fn,dw,de,ds,dn,areaw,areae,areas,arean,sp,su
 	  	real :: ap_tilde,ap_zero,h_tot
-
+	    real :: r_w,r_e,dx_cell,dy_cell,volume
+	    
 		!-----------------------------!
 		! Calculates convective terms !
 		!-----------------------------!
@@ -782,10 +806,20 @@ module sub
 				!-------------------------!
 				! Find area of cell faces !
 				!-------------------------!
-	      		areaw=y_v(j+1)-y_v(j)
-	      		areae=areaw
-	      		areas=x_u(i+1)-x_u(i)
+!	      		areaw=y_v(j+1)-y_v(j)
+!	      		areae=areaw
+!	      		areas=x_u(i+1)-x_u(i)
+!	      		arean=areas
+	      		dx_cell=y_v(j+1)-y_v(j)
+				dy_cell=x_u(i+1)-x_u(i)
+				r_w=abs(xl/2-x_u(i))
+				r_e=abs(xl/2-x_u(i+1))
+				
+				areaw=pi*r_w*dy_cell
+	      		areae=pi*r_e*dy_cell
+	      		areas=pi/2*abs(r_w**2-r_e**2)
 	      		arean=areas
+	      		volume=areas*dy
 				
 				!---------------------------!
 				! Find convective mass flux !
@@ -835,14 +869,14 @@ module sub
 	        	if (j==2) then
 	        		!Ra=g_const/(nu_a*beta_a*T(i,j))*(T(i,j)-T_amb)*areaw**3
 	        		!h_co=k_a*0.54*Ra**0.25/arean
-	        		h_co=5
+	        		h_co=10
 	        		h_tot=1/(cup_width/k_cup + 1/h_co)
 	        		
 	          		su=su-h_tot*areas*(T(i,j)-T_amb)
 	        	elseif (j==npj-1) then
 	        		!Ra=g_const/(nu_a*beta_a*T(i,j))*(T(i,j)-T_amb)*areaw**3
 	        		!h_co=k_a*0.27*Ra**0.25/areas
-	        		h_co=65
+	        		h_co=45
 	        		h_tot=1/(cup_width/k_cup + 1/h_co)
 	        		
 	        		su=su-h_tot*arean*(T(i,j)-T_amb)
@@ -860,7 +894,7 @@ module sub
 	            !------------------------------!
 				! Establish center coefficient !
 				!------------------------------!
-	        	ap_zero= rho*cp*areas*areaw/dt
+	        	ap_zero= rho*cp*volume/dt
 	        	ap_tilde=aw(i,j)+ae(i,j)+as(i,j)+an(i,j)+fe-fw+fn-fs-sp
 	        	ap(i,j)=ap_zero+ap_tilde
 	      	
@@ -918,6 +952,7 @@ module sub
 	  	double precision, dimension(:,:), intent(out) :: ae,aw,an,as,ap,b
 	  	integer :: i,j
 	  	real ::  areaw,areae,areas,arean,sp
+	  	real :: r_w,r_e,dx_cell,dy_cell,volume
 		
 		!-----------------------------!
 		! Calculates convective terms !
@@ -933,10 +968,20 @@ module sub
 				!-------------------------!
 				! Find area of cell faces !
 				!-------------------------!
-	      		areaw=y_v(j+1)-y_v(j)
-	      		areae=areaw
-	      		areas=x_u(i+1)-x_u(i)
+!	      		areaw=y_v(j+1)-y_v(j)
+!	      		areae=areaw
+!	      		areas=x_u(i+1)-x_u(i)
+!	      		arean=areas
+	      		dx_cell=y_v(j+1)-y_v(j)
+				dy_cell=x_u(i+1)-x_u(i)
+				r_w=abs(xl/2-x_u(i))
+				r_e=abs(xl/2-x_u(i+1))
+				
+				areaw=pi*r_w*dy_cell
+	      		areae=pi*r_e*dy_cell
+	      		areas=pi/2*abs(r_w**2-r_e**2)
 	      		arean=areas
+	      		volume=areas*dy
 				
 				!-------------------!
 				! Find source terms !
@@ -1080,7 +1125,7 @@ end module sub
 			! Solve pc-equation !
 			!-------------------!
 			call pccoeff(ae,aw,an,as,ap,b)
-			do steps=1,10
+			do steps=1,15
 				call solve(pc,b,ae,aw,an,as,ap,1,npi,1,npj)
 			end do
 			
@@ -1141,7 +1186,7 @@ end module sub
 		!---------------------------------------!
 		! Print results for every 10th timestep !
 		!---------------------------------------!
-   		if (mod(n,10) == 0) then
+   		if (mod(n,1) == 0) then
       		write (*,'(f7.2,5g15.5)')  n*dt, &
              	u(it,jt),v(it,jt),p(it,jt),pc(it,jt),T(it,jt)
             

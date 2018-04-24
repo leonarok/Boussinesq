@@ -2,25 +2,25 @@ clear all
 close all
 clc
 
-npi=42;
-npj=82;
+x=dlmread('output/x.dat');
+y=dlmread('output/y.dat');
+npi=length(x);
+npj=length(y);
 
-tend=3080;
-dt=2;
+tend=3600;
+dt=10;
 
-printTimes=10;
+printTimes=1;
 print_dt=printTimes*dt;
 printSteps=ceil(tend/print_dt);
 
 fileloc = 'output/temp/temp_     .00.dat';
 count = '    ';
 
-tempMid=83*ones(1,printSteps);tempTopRight=tempMid;
+tempMid=80*ones(1,printSteps);tempTopRight=tempMid;
 tempMean=tempMid;tempMidTop=tempMid;
 tempBotRight=tempMid;
 
-x=dlmread('output/x.dat');
-y=dlmread('output/y.dat');
 
 
 time=0:print_dt:printSteps*print_dt;
@@ -45,16 +45,16 @@ for n=1:printSteps
     T=dlmread(fileloc)-273.16;
     
     tempMid(n+1)=T(npi/2,npj/2);
-    tempMidTop(n+1)=T(npi/2,ceil(npj*5/6));
+    tempMidTop(n+1)=T(npi/2,ceil(npj*3/4));
     tempMean(n+1)=mean(mean(T(2:npi-1,2:npj-1)));
-    tempTopRight(n+1)=T(ceil(npi*5/6),ceil(npj*5/6));
-    tempBotRight(n+1)=T(ceil(npi*1/6),ceil(npj*1/6));
+    tempTopRight(n+1)=T(ceil(npi*3/4),ceil(npj*3/4));
+    tempBotRight(n+1)=T(ceil(npi*1/4),ceil(npj*1/4));
     
-    drawnow
-    surf(x(2:npi-1),y(2:npj-1),T(2:npi-1,2:npj-1)')
-    axis([x(2) x(npi-1) y(2) y(npj-1) 20 83])
-    caxis([20 83]);
-    colorbar
+%     drawnow
+%     surf(x(2:npi-1),y(2:npj-1),T(2:npi-1,2:npj-1)','EdgeColor','none')
+%     axis([x(2) x(npi-1) y(2) y(npj-1) 20 90])
+%     caxis([20 90]);
+%     colorbar
 %     shading interp
 
 end

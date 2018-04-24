@@ -2,8 +2,10 @@ clear all
 close all
 clc
 
-npi=42;
-npj=82;
+x=dlmread('output/x.dat');
+y=dlmread('output/y.dat');
+npi=length(x);
+npj=length(y);
 
 tend=3600;
 dt=0.5;
@@ -18,8 +20,6 @@ count = '    ';
 tempMid=zeros(1,printSteps);tempTopRight=tempMid;
 tempMean=tempMid;tempMidTop=tempMid;
 
-x=dlmread('output/x.dat');
-y=dlmread('output/y.dat');
 
 
 time=print_dt:print_dt:printSteps*print_dt;

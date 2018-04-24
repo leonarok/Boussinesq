@@ -13,14 +13,15 @@ module declarations
 	double precision,public,allocatable,dimension(:,:) :: u,v,pc,p,T
 	double precision,public,allocatable,dimension(:,:) :: u_tent,v_tent,T_tent
 	double precision,public, parameter :: pi=3.1415927
-	double precision,public :: radius,perim,h,Tpar,rho,mu,k,cp
+	double precision,public :: radius,perim,h,Tpar,rho,mu,nu,nu_a,k,k_a,cp
 	double precision,public, allocatable, dimension(:,:) :: f_u,f_v
 	double precision,public, allocatable, dimension(:,:) :: d_u,d_v
 	double precision,public :: dx,dy
 	real ,public :: relax(6)
 	integer,public :: iter,last,npi,npj,nsteps
-	double precision,public :: cup_width,k_cup,T_amb,g_const,alpha,tend,dt
-	
+	double precision,public :: cup_width,k_cup,T_amb,g_const,alpha_l,tend,dt
+	double precision,public :: h_coVERT,h_coHORI,h_ci,beta_l,beta_a,h_co
+	double precision,public :: Ra,Pr_l,Pr_a
 end module declarations
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -64,9 +65,9 @@ module sub
 		!-----------------------------------------------------------------!
 		! Set number of grid points in each direction and allocate arrays !
 		!-----------------------------------------------------------------!
-		npi=42
-	  	npj=82
-	  	last=200	
+		npi=92
+	  	npj=122
+	  	last=400	
 		allocate(u(npi,npj),v(npi,npj),p(npi,npj),pc(npi,npj))
 		allocate(T(npi,npj))
 		allocate(u_tent(npi,npj),v_tent(npi,npj),T_tent(npi,npj))
@@ -76,7 +77,7 @@ module sub
 		! Set timestep and simulation end time !
 		!--------------------------------------!
 		tend=3600
-		dt=2
+		dt=1
 		nsteps=ceiling(tend/dt)
 
 		!---------------------------------!
@@ -95,7 +96,7 @@ module sub
 		v_tent=0.00
 		p=0.00 !initial pressure estimate
 		pc=0.00
-		T(1:npi,1:npj)=273.16+83.00
+		T(1:npi,1:npj)=273.16+80.00
 		d_u=0.
 		d_v=0.
 	
@@ -103,19 +104,26 @@ module sub
 		! Set constant values !
 		!---------------------!
 	 	g_const=9.81			! Standard gravity
-	 	alpha=0.000069			! Thermal expansion coeff.
+	 	alpha_l=0.000069			! Thermal expansion coeff. of liquid
 	 	rho=1000	! Density
 	 	mu=0.001   ! Dynamic viscosity
+	 	nu=mu/rho	! Kinematic viscosity
 	 	k=0.64  	! Thermal conductivety 
-	 	cp=4181   	! Specific heat
-	  
+	 	cp=4181   	! Specific heat of liquid
+	 	beta_l=k/(rho*cp)	 	! Thermal diffusivity of liquid
+	 	Pr_l=cp*mu/k 			! Prandtl number for liquid
+
 	  
 	  	!-----------------------------------!
 		! Set cup/wall heat loss parameters !
 		!-----------------------------------!
-	    cup_width=0.01
+	    cup_width=0.008
 	    k_cup=2.09
-	  
+	   	Pr_a=0.75				! Prandtl number for air
+	  	beta_a=0.000019			! Thermal diffusivity of air
+	  	k_a=0.025
+	  	nu_a=0.0000148
+	  	
 	  	!---------------------------!
 		! Set relaxation parameters !
 		!---------------------------!
@@ -150,8 +158,8 @@ module sub
 		!----------------------------------!
 		! Set size of computational domain !
 		!----------------------------------!
-	  	xl=0.05
-	  	yl=0.1
+	  	xl=0.08-cup_width*2
+	  	yl=0.09-cup_width
 		
 		!---------------------------!
 		! Calculate inner grid size !
@@ -704,7 +712,7 @@ module sub
 				! Find source terms !
 				!-------------------!
 	        	sp=0.
-	        	su=g_const*alpha*(T_tent(i,j)-T_amb)*areas*areaw
+	        	su=g_const*alpha_l*(T_tent(i,j)-T_amb)*areas*areaw
 	
 	      		!----------------------------------!
 				! Establish neighbour coefficients !
@@ -758,7 +766,7 @@ module sub
 	  	double precision, dimension(:,:), intent(out) :: ae,aw,an,as,ap,b
 	  	integer :: i,j
 	  	real :: fw,fe,fs,fn,dw,de,ds,dn,areaw,areae,areas,arean,sp,su
-	  	real :: ap_tilde,ap_zero
+	  	real :: ap_tilde,ap_zero,h_tot
 
 		!-----------------------------!
 		! Calculates convective terms !
@@ -810,14 +818,34 @@ module sub
 	      		su=0.
 	      		! Check if next to wall. If true, add heat loss through wall
 	        	if (i==2) then
-	          		su=su-(k_cup/cup_width)*areaw*(T(i,j)-T_amb)
+	        		Ra=g_const/(nu_a*beta_a*T_amb)*(T(i,npj/2)-T_amb)*yl**3
+	        		h_co=k_a/yl*( 0.68+0.67*Ra**0.25/	&
+	        			( 1+(0.492/Pr_a)**(9/16) )**(4/9) )    		
+	        		h_tot=1/(cup_width/k_cup + 1/h_co)
+	        		
+	          		su=su-h_tot*areaw*(T(i,j)-T_amb)
 	        	elseif (i==npi-1) then
-	        		su=su-(k_cup/cup_width)*areae*(T(i,j)-T_amb)
+	        		Ra=g_const/(nu_a*beta_a*T_amb)*(T(i,npj/2)-T_amb)*yl**3
+	        		h_co=k_a/yl*( 0.68+0.67*Ra**0.25/	&
+	        			( 1+(0.492/Pr_a)**(9/16) )**(4/9) )
+	        		h_tot=1/(cup_width/k_cup + 1/h_co)
+	        		
+	        		su=su-h_tot*areae*(T(i,j)-T_amb)
 	        	end if
 	        	if (j==2) then
-	          		su=su-(k_cup/cup_width)*areas*(T(i,j)-T_amb)
+	        		!Ra=g_const/(nu_a*beta_a*T(i,j))*(T(i,j)-T_amb)*areaw**3
+	        		!h_co=k_a*0.54*Ra**0.25/arean
+	        		h_co=5
+	        		h_tot=1/(cup_width/k_cup + 1/h_co)
+	        		
+	          		su=su-h_tot*areas*(T(i,j)-T_amb)
 	        	elseif (j==npj-1) then
-	        		su=su-(k_cup/cup_width)*arean*(T(i,j)-T_amb)
+	        		!Ra=g_const/(nu_a*beta_a*T(i,j))*(T(i,j)-T_amb)*areaw**3
+	        		!h_co=k_a*0.27*Ra**0.25/areas
+	        		h_co=65
+	        		h_tot=1/(cup_width/k_cup + 1/h_co)
+	        		
+	        		su=su-h_tot*arean*(T(i,j)-T_amb)
 	        	end if
 	
 	            
@@ -1052,7 +1080,7 @@ end module sub
 			! Solve pc-equation !
 			!-------------------!
 			call pccoeff(ae,aw,an,as,ap,b)
-			do steps=1,20
+			do steps=1,10
 				call solve(pc,b,ae,aw,an,as,ap,1,npi,1,npj)
 			end do
 			
@@ -1089,7 +1117,9 @@ end module sub
 				! Convergence met -> break iterations !
 				!-------------------------------------!
 				write(*,*) 'needed iterations:',iter
+				last=iter
 				exit
+				
 							
 			else if(iter==last) then
 				
@@ -1112,7 +1142,7 @@ end module sub
 		! Print results for every 10th timestep !
 		!---------------------------------------!
    		if (mod(n,10) == 0) then
-      		write (*,'(f6.2,5g15.5)')  n*dt, &
+      		write (*,'(f7.2,5g15.5)')  n*dt, &
              	u(it,jt),v(it,jt),p(it,jt),pc(it,jt),T(it,jt)
             
         	call print(real(dt*n)) 

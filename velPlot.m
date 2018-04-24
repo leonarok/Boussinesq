@@ -2,11 +2,13 @@ clear all
 close all
 clc
 
-npi=42;
-npj=82;
+x=dlmread('output/x.dat');
+y=dlmread('output/y.dat');
+npi=length(x);
+npj=length(y);
 
 tend=2000;
-dt=0.5;
+dt=5;
 
 printTimes=10;
 print_dt=printTimes*dt;
@@ -18,9 +20,6 @@ count = '    ';
 
 tempMid=zeros(1,printSteps);tempTopRight=tempMid;
 tempMean=tempMid;tempMidTop=tempMid;
-
-x=dlmread('output/x.dat');
-y=dlmread('output/y.dat');
 
 
 time=print_dt:print_dt:printSteps*print_dt;
@@ -71,7 +70,7 @@ set(h,'LineWidth',0.5)
 set(h,'MaxHeadSize',2)
 set(h,'AutoScaleFactor',2)
 title(sprintf('t=%g s, n=%g',tend,npi*npj))
-axis([x(2) x(npi-1) y(2) y(npj-1)])
+axis([x(1) x(npi) y(1) y(npj)])
 xlabel('Width [m]')
 ylabel('Height [m]')
 % zlabel('Pressure [Pa]')
